@@ -15,7 +15,7 @@ The robots we will work are:
 - Mecanum-Drive robot: more performand movements in x and y directions
 
 These are represented in the picture below:
-![](./Images/01_Setup/rUBot_Limo.png)
+![](./Images/01_Setup/rUBot_Limo_ROSbot.png)
 
 A very good guide is described in: 
 - [Udemy course ROS2 Robot Models by Edouard Renard](https://www.udemy.com/course/ros2-tf-urdf-rviz-gazebo/learn/lecture/38688920#overview)

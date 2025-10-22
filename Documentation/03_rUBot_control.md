@@ -16,9 +16,9 @@ The final model represents the real robots we will use in the laboratory:
 - LIMO commercial mecanum robot
 
 
-| <img src="./Images/01_Setup/01_rubot_pi.jpg" width="400"/> | <img src="./Images/01_Setup/02_Limo.png" width="380"/> |
-|:--:|:--:|
-| **rUBot** | **LIMO** |
+| <img src="./Images/01_Setup/01_rubot_pi.jpg" width="270"/> | <img src="./Images/01_Setup/02_Limo.png" width="250"/> |<img src="./Images/01_Setup/rosbot_xl.png" width="260"/> |
+|:--:|:--:|:--:|
+| **rUBot** | **LIMO** | **ROSbot** |
 
 **Bibliography:**
 - TheConstruct: Build Your First ROS2 Based Robot https://www.robotigniteacademy.com/courses/309

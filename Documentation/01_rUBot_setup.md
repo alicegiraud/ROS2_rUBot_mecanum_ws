@@ -54,18 +54,19 @@ To work on the project (during lab sessions or for homework), each student has t
   ```
 - Add in .bashrc the lines:
   ````shell
-  export ROS_DOMAIN_ID=0
-  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-  export GAZEBO_MODEL_PATH=/home/user/ROS2_rUBot_mecanum_ws/src/my_robot_bringup/models:$GAZEBO_MODEL_PATH
   source /opt/ros/humble/setup.bash
   source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
-  source /home/user/ROS2_rUBot_tutorial_ws/install/setup.bash
   source /home/user/ROS2_rUBot_mecanum_ws/install/setup.bash
-  #cd /home/user/ROS2_rUBot_tutorial_ws
   cd /home/user/ROS2_rUBot_mecanum_ws
+  export ROS_DOMAIN_ID=x # change x for your group number
+  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+  export GAZEBO_MODEL_PATH=/home/user/ROS2_rUBot_mecanum_ws/src/my_robot_bringup/models:$GAZEBO_MODEL_PATH
+  export QT_QPA_PLATFORM=xcb # Best for RVIZ2
+  export ROS_LOCALHOST_ONLY=0 # To allow communication with other computers in the same network
   git config --global user.email "xxx@alumnes.ub.edu"
   git config --global user.name "your_github_username"
   ````
+  > Modify if necessary the `ROS_DOMAIN_ID` and the `/home/user` PATH according to your project configuration
 - If the compilation process returns warnings on "Deprecated setup tools", proceed with:
   ````shell
   sudo apt install python3-pip
@@ -96,9 +97,8 @@ The UB custom rUBot mecanum custom made robot is based on:
 - Raspberrypi4 computer onboard
 - Custom ROS2 configuration in Ubuntu22.04 server 64bits.
 
-`Local network control`: 
 
-When you power the rUBot mecanum robot, it connects to the wifi local network `Robotics_UB`router.
+When you power the rUBot mecanum robot, it connects to the wifi `local network: Robotics_UB`:
 
 - Each rUBot has a specific IP address assigned (192.168.1.x4).
 - Each computer has a specific IP address assigned (192.168.1.x5).
@@ -109,13 +109,19 @@ When you power the rUBot mecanum robot, it connects to the wifi local network `R
   ````
 - Open the the project in VScode and verify the .bashrc file has the following lines:
   ````shell
-  export ROS_DOMAIN_ID=x  #Replace x with your group number
-  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
   source /opt/ros/humble/setup.bash
   source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
-  source /home/ubuntu/Desktop/ROS2_rUBot_mecanum_ws/install/setup.bash
-  cd /home/ubuntu/Desktop/ROS2_rUBot_mecanum_ws
+  source /home/user/ROS2_rUBot_mecanum_ws/install/setup.bash
+  cd /home/user/ROS2_rUBot_mecanum_ws
+  export ROS_DOMAIN_ID=x # change on group number
+  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+  export GAZEBO_MODEL_PATH=/home/user/ROS2_rUBot_mecanum_ws/src/my_robot_bringup/models:$GAZEBO_MODEL_PATH
+  export QT_QPA_PLATFORM=xcb # Best for RVIZ2
+  export ROS_LOCALHOST_ONLY=0 # To allow communication with other computers in the same network
+  git config --global user.email "xxx@alumnes.ub.edu"
+  git config --global user.name "your_github_username"
   ````
+  > Modify if necessary the `ROS_DOMAIN_ID` and the `/home/user` PATH according to your project configuration
 - Open a new terminal and verify the working nodes from your rUBot_x:
   ````shell
   ros2 node list
