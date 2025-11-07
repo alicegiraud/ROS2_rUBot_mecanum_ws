@@ -198,10 +198,8 @@
   </div>
 
   <div class="dashboard">
-    <!-- Camera -->
     <img class="image-view" id="camera-feed" alt="Camera Feed" />
 
-    <!-- Right panel -->
     <aside class="right-panel">
       <div class="joy-legend">Joystick</div>
       <div class="joystick-container" id="joystick_h"></div>
@@ -217,13 +215,11 @@
       </div>
     </aside>
 
-    <!-- Map + LiDAR -->
     <div class="map-display">
       <h3>Map + LiDAR</h3>
       <canvas id="map-canvas" class="map-image" width="200" height="200"></canvas>
     </div>
 
-    <!-- Pose -->
     <div class="position-display">
       <h3>Position & Orientation</h3>
       <p>X (m): <span id="position-x">0</span></p>
@@ -236,16 +232,14 @@
     let ros;
     let cmdVelTopic;
 
-    // ===== Config =====
-    const MAP_RESOLUTION = 0.01;      // m/px
-    const ROBOT_LEN   = 0.30;         // 30 cm (forward, X)
-    const ROBOT_WID   = 0.20;         // 20 cm (lateral, Y)
-    const SPEED_VECTOR_GAIN = 0.5;    // metres de fletxa per (m/s)
-    const maxSpeed = 0.3;             // m/s
-    const maxTurn  = 0.4;             // rad/s
-    const distanceFactor = 75;        // joystick
+    const MAP_RESOLUTION = 0.01;   // m/px
+    const ROBOT_LEN = 0.30;        // 30cm (X forward)
+    const ROBOT_WID = 0.20;        // 20cm (Y lateral)
+    const SPEED_VECTOR_GAIN = 0.5; // metres de fletxa per (m/s)
+    const maxSpeed = 0.3;
+    const maxTurn  = 0.4;
+    const distanceFactor = 75;
 
-    // ===== State =====
     let currentLinearX = 0;
     let currentLinearY = 0;
     let currentAngularZ = 0;
@@ -253,7 +247,6 @@
     let mapImage = new Image();
     let latestScan = null;
 
-    // Origen i heading inicial
     let odomCenterSet = false;
     let odomCenterX = 0;
     let odomCenterY = 0;
@@ -263,11 +256,10 @@
     let cosYaw0 = 1;
     let sinYaw0 = 0;
 
-    // Pose en frame de dibuix:
-    // +X = forward inicial (amunt), +Y = dreta inicial
+    // Pose en frame display (+X amunt, +Y dreta)
     let lastRobotX = 0;
     let lastRobotY = 0;
-    let lastRobotYaw = 0;   // relatiu a heading inicial
+    let lastRobotYaw = 0; // yaw relatiu en frame món (no invertit)
 
     function getRosbridgeAddress() {
       const currentUrl = window.location.href;
@@ -282,10 +274,7 @@
     }
 
     function connectToROS() {
-      if (ros && ros.isConnected) {
-        console.log('Ja estàs connectat.');
-        return;
-      }
+      if (ros && ros.isConnected) return;
 
       document.getElementById('connectBtn')?.setAttribute('disabled', 'disabled');
       const robotNum = parseInt(document.getElementById('robotNumber').value) || 1;
@@ -307,67 +296,62 @@
       console.log("Connecting to:", rosbridgeAddress);
 
       resizeMapCanvas();
-      mapImage.onload = () => {
-        resizeMapCanvas();
-      };
+      mapImage.onload = () => resizeMapCanvas();
       mapImage.src = mapPath;
 
       ros = new ROSLIB.Ros({ url: rosbridgeAddress });
 
       const connectBtn = document.getElementById('connectBtn');
-      ros.on('connection', function () {
-        console.log('Connected to rosbridge:', rosbridgeAddress);
-        if (connectBtn) connectBtn.classList.add('connected');
+      ros.on('connection', () => {
+        console.log('Connected');
+        connectBtn?.classList.add('connected');
+        connectBtn?.removeAttribute('disabled');
+        ros.isConnected = true;
         setupTopics();
         setupControls();
-        document.getElementById('connectBtn')?.removeAttribute('disabled');
-        ros.isConnected = true;
       });
 
-      ros.on('error', function (error) {
-        console.error('Connection Error:', error);
-        if (connectBtn) connectBtn.classList.remove('connected');
-        document.getElementById('connectBtn')?.removeAttribute('disabled');
+      ros.on('error', (e) => {
+        console.error('Connection Error:', e);
+        connectBtn?.classList.remove('connected');
+        connectBtn?.removeAttribute('disabled');
         ros.isConnected = false;
       });
 
-      ros.on('close', function () {
+      ros.on('close', () => {
         console.log('Connection closed.');
-        if (connectBtn) connectBtn.classList.remove('connected');
-        document.getElementById('connectBtn')?.removeAttribute('disabled');
+        connectBtn?.classList.remove('connected');
+        connectBtn?.removeAttribute('disabled');
         ros.isConnected = false;
       });
     }
 
     function setupTopics() {
-      // cmd_vel
       cmdVelTopic = new ROSLIB.Topic({
-        ros: ros,
+        ros,
         name: '/cmd_vel',
         messageType: 'geometry_msgs/msg/Twist'
       });
 
-      // Camera
       const imageTopic = new ROSLIB.Topic({
-        ros: ros,
+        ros,
         name: '/image_raw/compressed',
         messageType: 'sensor_msgs/msg/CompressedImage'
       });
-      imageTopic.subscribe((message) => {
+      imageTopic.subscribe(msg => {
         document.getElementById('camera-feed').src =
-          "data:image/jpeg;base64," + message.data;
+          "data:image/jpeg;base64," + msg.data;
       });
 
-      // Odom
       const odomTopic = new ROSLIB.Topic({
-        ros: ros,
+        ros,
         name: '/odom',
         messageType: 'nav_msgs/msg/Odometry'
       });
-      odomTopic.subscribe((message) => {
-        const p = message.pose.pose.position;
-        const o = message.pose.pose.orientation;
-        const t = message.twist.twist;
+      odomTopic.subscribe(msg => {
+        const p = msg.pose.pose.position;
+        const o = msg.pose.pose.orientation;
+        const t = msg.twist.twist;
 
         const yawAbs = quaternionToYaw(o);
 
@@ -385,7 +369,7 @@
         }
 
         const yawRel = yawAbs - yawOffset;
-        lastRobotYaw = yawRel;
+        lastRobotYaw = yawRel; // per càlculs de món/LiDAR
 
         const dx = p.x - odomCenterX;
         const dy = p.y - odomCenterY;
@@ -403,14 +387,14 @@
         document.getElementById('rotation-z').textContent =
           (lastRobotYaw * 180 / Math.PI).toFixed(1);
 
-        // Velocitat base_link (x forward, y left)
+        // Velocitat base_link
         const vx_b = t.linear.x;
         const vy_b = t.linear.y;
 
         const c = Math.cos(yawRel);
         const s = Math.sin(yawRel);
 
-        // Globals al frame inicial
+        // Globals en frame inicial
         const vx_rel = vx_b * c - vy_b * s;
         const vy_left_rel = vx_b * s + vy_b * c;
 
@@ -422,28 +406,24 @@
                        lastRobotYaw, latestScan);
       });
 
-      // LiDAR
       const scanTopic = new ROSLIB.Topic({
-        ros: ros,
+        ros,
         name: '/scan',
         messageType: 'sensor_msgs/msg/LaserScan'
       });
-      scanTopic.subscribe((message) => {
-        latestScan = message;
+      scanTopic.subscribe(msg => {
+        latestScan = msg;
       });
     }
 
     function resizeMapCanvas() {
       const canvas = document.getElementById('map-canvas');
       if (!canvas) return;
-
       const dpr = window.devicePixelRatio || 1;
       const cssW = canvas.clientWidth || canvas.width || 200;
       const cssH = canvas.clientHeight || canvas.height || cssW;
-
       canvas.width  = Math.round(cssW * dpr);
       canvas.height = Math.round(cssH * dpr);
-
       const ctx = canvas.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
@@ -465,7 +445,7 @@
 
       ctx.save();
 
-      // Eix X (vermell)
+      // X vermell (vertical)
       ctx.strokeStyle = 'red';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
@@ -473,15 +453,7 @@
       ctx.lineTo(cx, H);
       ctx.stroke();
 
-      // Eix Y (verd)
-      ctx.strokeStyle = 'green';
-      ctx.beginPath();
-      ctx.moveTo(0, cy);
-      ctx.lineTo(W, cy);
-      ctx.stroke();
-
       // Ticks X
-      ctx.strokeStyle = 'red';
       const maxXTicks = Math.floor((H / 2) / tickPx);
       for (let i = 1; i <= maxXTicks; i++) {
         const yUp = cy - i * tickPx;
@@ -490,8 +462,14 @@
         ctx.beginPath(); ctx.moveTo(cx - tickLen, yDn); ctx.lineTo(cx + tickLen, yDn); ctx.stroke();
       }
 
-      // Ticks Y
+      // Y verd (horitzontal)
       ctx.strokeStyle = 'green';
+      ctx.beginPath();
+      ctx.moveTo(0, cy);
+      ctx.lineTo(W, cy);
+      ctx.stroke();
+
+      // Ticks Y
       const maxYTicks = Math.floor((W / 2) / tickPx);
       for (let i = 1; i <= maxYTicks; i++) {
         const xR = cx + i * tickPx;
@@ -506,7 +484,6 @@
     function drawRobotState(robotX, robotY, velX, velY, yawRel, scanMsg) {
       const canvas = document.getElementById('map-canvas');
       const ctx = canvas.getContext('2d');
-
       const W = canvas.clientWidth || canvas.width;
       const H = canvas.clientHeight || canvas.height;
 
@@ -518,11 +495,14 @@
 
       drawAxes(ctx, W, H);
 
+      // IMPORTANT: al canvas hem reflectit Y, així que l'angle de dibuix s'inverteix
+      const yawDraw = -yawRel;
+
       // Precompute robot en frame inicial relatiu
       const X_rel = robotX;
       const Y_left_rel = -robotY;
 
-      // ---- LiDAR ----
+      // ---- LiDAR (en món correcte, sense invertir) ----
       if (scanMsg && yawOffsetSet && odomCenterSet) {
         const angleMin = scanMsg.angle_min;
         const angleInc = scanMsg.angle_increment;
@@ -546,11 +526,11 @@
           const c = Math.cos(yawRel);
           const s = Math.sin(yawRel);
 
-          // En frame inicial rel
+          // En frame inicial relatiu (no display)
           const Xp_rel = X_rel + c * x_r - s * y_r;
           const Yp_left_rel = Y_left_rel + s * x_r + c * y_r;
 
-          // A display: +Y dreta
+          // A display (+Y dreta)
           const Xd = Xp_rel;
           const Yd = -Yp_left_rel;
 
@@ -579,8 +559,8 @@
       ctx.beginPath();
       for (let i = 0; i < corners.length; i++) {
         const [xr, yr] = corners[i];
-        const c = Math.cos(yawRel);
-        const s = Math.sin(yawRel);
+        const c = Math.cos(yawDraw);
+        const s = Math.sin(yawDraw);
         const Xw = robotX + c * xr - s * yr;
         const Yw = robotY + s * xr + c * yr;
         const [px, py] = worldToPixel(Xw, Yw, W, H);
@@ -595,11 +575,11 @@
       ctx.stroke();
       ctx.restore();
 
-      // ---- Orientació (blava) ----
-      const arrowLen = 0.20;
+      // ---- Orientació (blava) amb yawDraw ----
       {
-        const Xtip = robotX + Math.cos(yawRel) * arrowLen;
-        const Ytip = robotY + Math.sin(yawRel) * arrowLen;
+        const arrowLen = 0.20;
+        const Xtip = robotX + Math.cos(yawDraw) * arrowLen;
+        const Ytip = robotY + Math.sin(yawDraw) * arrowLen;
         const [ax, ay] = worldToPixel(Xtip, Ytip, W, H);
         ctx.beginPath();
         ctx.moveTo(cx, cy);
@@ -609,7 +589,7 @@
         ctx.stroke();
       }
 
-      // ---- Vector velocitat (vermell) ----
+      // ---- Vector velocitat (vermell) en coords display (ja correctes) ----
       const speed = Math.hypot(velX, velY);
       if (speed > 0.01) {
         const len_m = speed * SPEED_VECTOR_GAIN;
@@ -674,7 +654,6 @@
       j.on('move', (evt, data) => {
         const ratio = Math.min(data.distance / distanceFactor, 1.0);
         const a = data.angle.radian;
-        // Amunt: +vx, Dreta: vy negatiu
         currentLinearX = Math.sin(a) * maxSpeed * ratio;
         currentLinearY = -Math.cos(a) * maxSpeed * ratio;
         vxSpan.textContent = currentLinearX.toFixed(2);
