@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<sdf version="1.7">
+<world name="my_world">
+  <!-- ROS init plugin -->
+  <plugin name="gazebo_ros" filename="libgazebo_ros_init.so"/>
+  <!-- ROS factory plugin, required for spawn_entity.py -->
+  <plugin name="gazebo_ros_factory" filename="libgazebo_ros_factory.so"/>
+
+  <!-- Ground plane -->
+  <include>
+    <uri>model://ground_plane</uri>
+  </include>
+
+  <!-- Sun -->
+  <include>
+    <uri>model://sun</uri>
+  </include>
+</world>
+
+</sdf>

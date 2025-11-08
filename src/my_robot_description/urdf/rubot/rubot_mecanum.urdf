@@ -16,6 +16,9 @@
   <material name="light_grey">
     <color rgba="0.75 0.75 0.75 1.0"/>
   </material>
+  <material name="orange">
+    <color rgba="1.0 0.5 0.0 1.0"/>
+  </material>
 
 <!-- base_footprint reference frame without inertia is needed -->
   <link name="base_footprint"/>
@@ -32,7 +35,7 @@
         <mesh filename="file://$(find my_robot_description)/meshes/rubot/base_link.stl" scale="0.001 0.001 0.001"/>
         <!-- <box size="0.26 0.15 0.08"/>-->
       </geometry>
-      <material name="yellow"/>
+      <material name="orange"/>
     </visual>
     <collision>
       <origin xyz="0 0 0"/>
@@ -329,7 +332,7 @@
 <!-- Gazebo colors have to be specified here with predefined Gazebo colors -->
 <!-- lower friction with floor -->
   <gazebo reference="base_link">
-    <material>Gazebo/Yellow</material>
+    <material>Gazebo/Orange</material>
     <mu1>0.005</mu1>
     <mu2>0.005</mu2>
   </gazebo>
