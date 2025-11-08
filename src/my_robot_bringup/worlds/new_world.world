@@ -1,20 +1,154 @@
 <?xml version="1.0" ?>
 <sdf version="1.7">
-<world name="my_world">
-  <!-- ROS init plugin -->
-  <plugin name="gazebo_ros" filename="libgazebo_ros_init.so"/>
-  <!-- ROS factory plugin, required for spawn_entity.py -->
-  <plugin name="gazebo_ros_factory" filename="libgazebo_ros_factory.so"/>
+  <world name="new_world">
 
-  <!-- Ground plane -->
-  <include>
-    <uri>model://ground_plane</uri>
-  </include>
+    <!-- Plugins necesarios para ROS -->
+    <plugin name="gazebo_ros" filename="libgazebo_ros_init.so"/>
+    <plugin name="gazebo_ros_factory" filename="libgazebo_ros_factory.so"/>
 
-  <!-- Sun -->
-  <include>
-    <uri>model://sun</uri>
-  </include>
-</world>
+    <!-- Suelo -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
 
+    <!-- Sol -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Laberinto -->
+    <model name="laberinto">
+      <!-- Paredes exteriores -->
+      <link name="wall_norte">
+        <pose>0 5 0.25 0 0 0</pose>
+        <collision name="coll_norte">
+          <geometry>
+            <box><size>10 0.2 0.5</size></box>
+          </geometry>
+        </collision>
+        <visual name="vis_norte">
+          <geometry>
+            <box><size>10 0.2 0.5</size></box>
+          </geometry>
+          <material><ambient>1 0 0 1</ambient></material>
+        </visual>
+        <static>1</static>
+      </link>
+
+      <link name="wall_sur">
+        <pose>0 -5 0.25 0 0 0</pose>
+        <collision name="coll_sur">
+          <geometry>
+            <box><size>10 0.2 0.5</size></box>
+          </geometry>
+        </collision>
+        <visual name="vis_sur">
+          <geometry>
+            <box><size>10 0.2 0.5</size></box>
+          </geometry>
+          <material><ambient>1 0 0 1</ambient></material>
+        </visual>
+        <static>1</static>
+      </link>
+
+      <link name="wall_este">
+        <pose>5 0 0.25 0 0 0</pose>
+        <collision name="coll_este">
+          <geometry>
+            <box><size>0.2 10 0.5</size></box>
+          </geometry>
+        </collision>
+        <visual name="vis_este">
+          <geometry>
+            <box><size>0.2 10 0.5</size></box>
+          </geometry>
+          <material><ambient>0 0 1 1</ambient></material>
+        </visual>
+        <static>1</static>
+      </link>
+
+      <link name="wall_oeste">
+        <pose>-5 0 0.25 0 0 0</pose>
+        <collision name="coll_oeste">
+          <geometry>
+            <box><size>0.2 10 0.5</size></box>
+          </geometry>
+        </collision>
+        <visual name="vis_oeste">
+          <geometry>
+            <box><size>0.2 10 0.5</size></box>
+          </geometry>
+          <material><ambient>0 0 1 1</ambient></material>
+        </visual>
+        <static>1</static>
+      </link>
+
+      <!-- Paredes internas (laberinto) -->
+      <link name="wall_int_1">
+        <pose>0 2 0.25 0 0 0</pose>
+        <collision name="coll_int_1">
+          <geometry>
+            <box><size>6 0.2 0.5</size></box>
+          </geometry>
+        </collision>
+        <visual name="vis_int_1">
+          <geometry>
+            <box><size>6 0.2 0.5</size></box>
+          </geometry>
+          <material><ambient>0 1 0 1</ambient></material>
+        </visual>
+        <static>1</static>
+      </link>
+
+      <link name="wall_int_2">
+        <pose>-2 0 0.25 0 0 1.57</pose>
+        <collision name="coll_int_2">
+          <geometry>
+            <box><size>4 0.2 0.5</size></box>
+          </geometry>
+        </collision>
+        <visual name="vis_int_2">
+          <geometry>
+            <box><size>4 0.2 0.5</size></box>
+          </geometry>
+          <material><ambient>0 1 1 1</ambient></material>
+        </visual>
+        <static>1</static>
+      </link>
+
+      <link name="wall_int_3">
+        <pose>2 -2 0.25 0 0 0</pose>
+        <collision name="coll_int_3">
+          <geometry>
+            <box><size>4 0.2 0.5</size></box>
+          </geometry>
+        </collision>
+        <visual name="vis_int_3">
+          <geometry>
+            <box><size>4 0.2 0.5</size></box>
+          </geometry>
+          <material><ambient>1 1 0 1</ambient></material>
+        </visual>
+        <static>1</static>
+      </link>
+
+      <link name="wall_int_4">
+        <pose>0 -3 0.25 0 0 1.57</pose>
+        <collision name="coll_int_4">
+          <geometry>
+            <box><size>3 0.2 0.5</size></box>
+          </geometry>
+        </collision>
+        <visual name="vis_int_4">
+          <geometry>
+            <box><size>3 0.2 0.5</size></box>
+          </geometry>
+          <material><ambient>1 0 1 1</ambient></material>
+        </visual>
+        <static>1</static>
+      </link>
+
+    </model>
+
+  </world>
 </sdf>

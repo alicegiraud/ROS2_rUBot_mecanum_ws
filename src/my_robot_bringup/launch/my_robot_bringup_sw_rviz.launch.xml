@@ -6,7 +6,7 @@
     <arg name="yaw0" default="0.0" description="Initial Yaw orientation of the robot (radians)" />
     <arg name="robot" default="rubot/rubot_mecanum.urdf"
          description="Name of the URDF file (e.g., rubot_limo.urdf)" />
-    <arg name="custom_world" default="square3m_walls.world"
+    <arg name="custom_world" default="new_world.world"
           description="Path to the Gazebo world file to load" />
     <let name="robot_path"
          value="$(find-pkg-share my_robot_description)/urdf/$(var robot)" />
