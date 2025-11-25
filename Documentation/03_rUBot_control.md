@@ -232,9 +232,7 @@ The objectives of this lab session are:
 
 We have created a Wall_Follower strategy based on the reading distances from LIDAR in the ranges: front, front-right, right and back-right, and perform a specific actuation in function of the minimum distance readings.
 
-Follow the instructions to create the program is described on: https://www.theconstructsim.com/wall-follower-algorithm/
-
-The algorith is based on laser ranges test and depends on the LIDAR type: 
+The algorith is based on laser ranges test and speciffic actuations on each region: 
 ![](./Images/03_Control/10_lidar_rg.png)
 
 **VIRTUAL environment**
@@ -249,7 +247,11 @@ ros2 launch my_robot_control my_robot_wallfollower.launch.xml time_to_stop:=50.0
 **Activity: rUBot wall-follower**
 
 The objective of this activity is to modify the code to move the robot in Holonomic way, for exemple:
--  When the minimum distance is in the right side move the robot over the left side
+-  When the minimum distance is in the front side move the robot over the left side
+- Whem the minimum distance is in the front-right side move the robot over the front-left side
+- When the minimum distance is in the right side move the robot forward and maintain its orientation parallel to the wall
+- When the minimum distance is in the back-right side move the robot over the front-right side
+- When the minimum distance is in the back side move the robot over the right side
 
 Design the code using the Holonomic robot performances, and upload:
 - the file "my_robot_wallfollower_holonomic.py"
