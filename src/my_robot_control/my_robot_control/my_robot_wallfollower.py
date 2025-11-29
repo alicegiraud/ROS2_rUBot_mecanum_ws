@@ -113,7 +113,7 @@ class WallFollower(Node):
             if d < scan.range_min or d > scan.range_max:
                 continue
 
-            ang = angle_min + i * angle_inc
+            ang = angle_min + i * angle_inc -180
 
             if -20 <= ang <= 20:
                 FRONT.append(d)
