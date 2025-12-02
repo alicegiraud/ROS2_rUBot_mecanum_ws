@@ -11,8 +11,8 @@
     <!-- Holonomic Wall Follower Node -->
     <node
         pkg="my_robot_control"
-        exec="my_robot_wallfollower_holonomic_exec"
-        name="wall_follower_holonomic_node"
+        exec="my_robot_wallfollower_holonomic_rot_exec"
+        name="wall_follower_holonomic_rot_node"
         output="screen">
 
         <param name="distance_limit"  value="$(var distance_limit)"/>

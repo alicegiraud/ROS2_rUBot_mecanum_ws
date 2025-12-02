@@ -11,7 +11,7 @@ class WallFollowerHolonomic(Node):
         super().__init__('wall_follower_holonomic_node')
 
         # Parameters
-        self.declare_parameter('distance_limit', 0.4)    # desired distance to walls
+        self.declare_parameter('distance_limit', 0.3)    # desired distance to walls
         self.declare_parameter('forward_speed', 0.10)    # nominal forward speed
         self.declare_parameter('strafe_speed', 0.10)     # sideways speed (|vy|)
         self.declare_parameter('turn_speed', 0.40)       # angular speed (if needed)
@@ -29,20 +29,26 @@ class WallFollowerHolonomic(Node):
         self.cmd = Twist()
         # Track last main movement direction: "forward", "backward", "left", "right"
         self.last_direction = "forward"
-        # Flag: currently in "searching for wall" mode
+        # Flag: currently in "searching for wall" mode (no close wall)
         self.searching = False
+        self.search_start_time = 0.0
+
+        # Rotation and close-wall direction timer
+        self.rotating = False                  # True when rotating to re-align
+        self.rotation_dir = 1.0                # +1 = left, -1 = right
+        self.close_dir = None                  # direction while close to wall
+        self.close_dir_start_time = 0.0        # time when current close_dir started
 
         # ROS 2 entities
         self.subscription = self.create_subscription(
             LaserScan, '/scan', self.laser_callback, qos_profile_sensor_data
         )
-        self.publisher = self.create_publisher(Twist, '/cmd_vel', 20)
+        self.publisher = self.create_publisher(Twist, '/cmd_vel', 10)
 
         # Timers
         self.info_timer = self.create_timer(1.0, self.log_info)
         self.stop_timer = self.create_timer(0.05, self.stop_watchdog)
         self.cmd_timer = self.create_timer(0.1, self.cmd_publish_timer_cb)  # 10 Hz
-        
 
         self._state_action = "Idle"
         self._last_action_logged = None
@@ -172,11 +178,47 @@ class WallFollowerHolonomic(Node):
         closest_region = min(region_mins, key=region_mins.get)
         closest_dist = region_mins[closest_region]
 
-        # If nothing is near, choose or maintain search motion
+        now = self.get_clock().now().nanoseconds * 1e-9
+
+        # ------------------------------------------------------------
+        # 1) ROTATION MODE: rotate until wall is closest on target side
+        # ------------------------------------------------------------
+        if self.rotating:
+            # If rotating LEFT (rotation_dir > 0) → want wall on RIGHT
+            # If rotating RIGHT (rotation_dir < 0) → want wall on LEFT
+            target_region = "RIGHT" if self.rotation_dir > 0 else "LEFT"
+
+            if closest_region == target_region:
+                # Stop rotating and resume normal wall following
+                self.rotating = False
+                action = (
+                    f"Rotation done → wall closest on {target_region} at {closest_dist:.2f} m"
+                )
+                # After finishing, do normal close-wall behavior below
+            else:
+                # Keep rotating in chosen direction
+                twist.linear.x = 0.0
+                twist.linear.y = 0.0
+                twist.angular.z = self.rotation_dir * self.v_ang
+                side_str = "LEFT" if self.rotation_dir > 0 else "RIGHT"
+                action = f"Rotating {side_str} to align wall on the {target_region.lower()}"
+                self.cmd = twist
+
+                if action != self._last_action_logged:
+                    self.get_logger().info(action)
+                    self._last_action_logged = action
+                self._state_action = action
+                return  # do not run search/normal logic in this callback
+
+        # ------------------------------------------------------------
+        # 2) SEARCH MODE: same as previous version (no close wall)
+        # ------------------------------------------------------------
         if closest_dist == float('inf') or closest_dist > self.base_distance:
+            # No close wall → use the search behavior
             if not self.searching:
-                # Just transitioned from "close wall" to "no close wall" → choose a new direction
+                # just transitioned to "no close wall"
                 self.searching = True
+                self.search_start_time = now
 
                 if self.last_direction == "backward":
                     # move left
@@ -209,17 +251,20 @@ class WallFollowerHolonomic(Node):
                     self.cmd.angular.z = 0.0
                     action = "No close wall → unknown last → start moving FORWARD"
             else:
-                # Already searching → keep the same command
+                # already searching, keep same cmd
                 action = "No close wall → keep searching movement"
 
-            # Use the current search cmd as twist to publish
             twist = self.cmd
-
+            # When searching we do NOT track the 3s condition (only when close to wall)
+            self.searching = True
+            self.close_dir = None  # not in close-wall tracking
         else:
-            # We see a wall again → exit search mode and use normal behavior
-            self.searching = False
+            # --------------------------------------------------------
+            # 3) NORMAL CLOSE-WALL MODE: wall-follow + 3s direction check
+            # --------------------------------------------------------
+            self.searching = False  # reset search
 
-            # Holonomic behaviors based on closest region
+            # Holonomic behaviors based on closest region (same as before)
             if closest_region == "FRONT":
                 # When minimum distance is in the front side → move LEFT
                 twist.linear.x = 0.0
@@ -277,10 +322,56 @@ class WallFollowerHolonomic(Node):
                 twist.angular.z = 0.0
                 action = f"BACK-LEFT {closest_dist:.2f} m → move BACK-RIGHT"
 
+            # 3a) Track direction while close to wall
+            dir_key = None
+            if twist.linear.x > 0 and abs(twist.linear.y) < 1e-3:
+                dir_key = "forward"
+            elif twist.linear.x < 0 and abs(twist.linear.y) < 1e-3:
+                dir_key = "backward"
+            elif twist.linear.y > 0 and abs(twist.linear.x) < 1e-3:
+                dir_key = "left"
+            elif twist.linear.y < 0 and abs(twist.linear.x) < 1e-3:
+                dir_key = "right"
+
+            if dir_key is not None:
+                if self.close_dir != dir_key:
+                    # Direction changed (or first time)
+                    self.close_dir = dir_key
+                    self.close_dir_start_time = now
+                else:
+                    # Same direction as before → check duration
+                    elapsed_close = now - self.close_dir_start_time
+                    if elapsed_close >= 3.0:
+                        if twist.linear.x > 0:
+                            # forward → no rotation
+                            pass
+                        elif twist.linear.x < 0 or twist.linear.y > 0:
+                            # backward or left → rotate LEFT
+                            self.rotating = True
+                            self.rotation_dir = 1.0
+                            twist = Twist()
+                            twist.linear.x = 0.0
+                            twist.linear.y = 0.0
+                            twist.angular.z = self.v_ang
+                            action = (
+                                f"Close-wall direction '{dir_key}' for 3s → start rotating LEFT"
+                            )
+                        elif twist.linear.y < 0:
+                            # right → rotate RIGHT
+                            self.rotating = True
+                            self.rotation_dir = -1.0
+                            twist = Twist()
+                            twist.linear.x = 0.0
+                            twist.linear.y = 0.0
+                            twist.angular.z = -self.v_ang
+                            action = (
+                                f"Close-wall direction '{dir_key}' for 3s → start rotating RIGHT"
+                            )
+
         # Update last commanded twist
         self.cmd = twist
 
-        # Update last_direction based on current cmd
+        # Update last_direction based on current cmd (used for search mode)
         if self.cmd.linear.x > 0 and abs(self.cmd.linear.y) < 1e-3:
             self.last_direction = "forward"
         elif self.cmd.linear.x < 0 and abs(self.cmd.linear.y) < 1e-3:

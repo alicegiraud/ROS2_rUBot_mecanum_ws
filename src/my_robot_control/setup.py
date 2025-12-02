@@ -36,6 +36,7 @@ setup(
             'my_robot_selfcontrol_holonomic_exec = my_robot_control.my_robot_selfcontrol_holonomic:main',
             'my_robot_selfcontrol_holonomic_real_exec = my_robot_control.my_robot_selfcontrol_holonomic_real:main',
             'my_robot_wallfollower_holonomic_exec = my_robot_control.my_robot_wallfollower_holonomic:main',
+            'my_robot_wallfollower_holonomic_rot_exec = my_robot_control.my_robot_wallfollower_holonomic_rot:main',
         ],
     },
 )
