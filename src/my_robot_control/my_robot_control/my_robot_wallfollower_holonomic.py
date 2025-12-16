@@ -11,7 +11,7 @@ class WallFollowerHolonomic(Node):
         super().__init__('wall_follower_holonomic_node')
 
         # Parameters
-        self.declare_parameter('distance_limit', 0.4)    # desired distance to walls
+        self.declare_parameter('distance_limit', 0.3)    # desired distance to walls
         self.declare_parameter('forward_speed', 0.10)    # nominal forward speed
         self.declare_parameter('strafe_speed', 0.10)     # sideways speed (|vy|)
         self.declare_parameter('turn_speed', 0.40)       # angular speed (if needed)
@@ -29,20 +29,17 @@ class WallFollowerHolonomic(Node):
         self.cmd = Twist()
         # Track last main movement direction: "forward", "backward", "left", "right"
         self.last_direction = "forward"
-        # Flag: currently in "searching for wall" mode
-        self.searching = False
 
         # ROS 2 entities
         self.subscription = self.create_subscription(
             LaserScan, '/scan', self.laser_callback, qos_profile_sensor_data
         )
-        self.publisher = self.create_publisher(Twist, '/cmd_vel', 20)
+        self.publisher = self.create_publisher(Twist, '/cmd_vel', 10)
 
         # Timers
         self.info_timer = self.create_timer(1.0, self.log_info)
         self.stop_timer = self.create_timer(0.05, self.stop_watchdog)
         self.cmd_timer = self.create_timer(0.1, self.cmd_publish_timer_cb)  # 10 Hz
-        
 
         self._state_action = "Idle"
         self._last_action_logged = None
@@ -172,54 +169,38 @@ class WallFollowerHolonomic(Node):
         closest_region = min(region_mins, key=region_mins.get)
         closest_dist = region_mins[closest_region]
 
-        # If nothing is near, choose or maintain search motion
+        # If nothing is near, choose next move based on last_direction
         if closest_dist == float('inf') or closest_dist > self.base_distance:
-            if not self.searching:
-                # Just transitioned from "close wall" to "no close wall" → choose a new direction
-                self.searching = True
-
-                if self.last_direction == "backward":
-                    # move left
-                    self.cmd.linear.x = 0.0
-                    self.cmd.linear.y = self.v_strafe
-                    self.cmd.angular.z = 0.0
-                    action = "No close wall → last was BACKWARD → start moving LEFT"
-                elif self.last_direction == "left":
-                    # move forward
-                    self.cmd.linear.x = self.v_lin
-                    self.cmd.linear.y = 0.0
-                    self.cmd.angular.z = 0.0
-                    action = "No close wall → last was LEFT → start moving FORWARD"
-                elif self.last_direction == "forward":
-                    # move right
-                    self.cmd.linear.x = 0.0
-                    self.cmd.linear.y = -self.v_strafe
-                    self.cmd.angular.z = 0.0
-                    action = "No close wall → last was FORWARD → start moving RIGHT"
-                elif self.last_direction == "right":
-                    # move backward
-                    self.cmd.linear.x = -self.v_lin
-                    self.cmd.linear.y = 0.0
-                    self.cmd.angular.z = 0.0
-                    action = "No close wall → last was RIGHT → start moving BACKWARD"
-                else:
-                    # default if unknown
-                    self.cmd.linear.x = self.v_lin
-                    self.cmd.linear.y = 0.0
-                    self.cmd.angular.z = 0.0
-                    action = "No close wall → unknown last → start moving FORWARD"
+            if self.last_direction == "backward":
+                # move left
+                twist.linear.x = 0.0
+                twist.linear.y = self.v_strafe
+                action = "No close wall → last was BACKWARD → move LEFT"
+            elif self.last_direction == "left":
+                # move forward
+                twist.linear.x = self.v_lin
+                twist.linear.y = 0.0
+                action = "No close wall → last was LEFT → move FORWARD"
+            elif self.last_direction == "forward":
+                # move right
+                twist.linear.x = 0.0
+                twist.linear.y = -self.v_strafe
+                action = "No close wall → last was FORWARD → move RIGHT"
+            elif self.last_direction == "right":
+                # move backward
+                twist.linear.x = -self.v_lin
+                twist.linear.y = 0.0
+                action = "No close wall → last was RIGHT → move BACKWARD"
             else:
-                # Already searching → keep the same command
-                action = "No close wall → keep searching movement"
+                # default if unknown
+                twist.linear.x = self.v_lin
+                twist.linear.y = 0.0
+                action = "No close wall → unknown last → move FORWARD"
 
-            # Use the current search cmd as twist to publish
-            twist = self.cmd
-
+            twist.angular.z = 0.0
         else:
-            # We see a wall again → exit search mode and use normal behavior
-            self.searching = False
-
             # Holonomic behaviors based on closest region
+
             if closest_region == "FRONT":
                 # When minimum distance is in the front side → move LEFT
                 twist.linear.x = 0.0
@@ -255,7 +236,7 @@ class WallFollowerHolonomic(Node):
                 twist.angular.z = 0.0
                 action = f"BACK {closest_dist:.2f} m → move RIGHT (vy<0)"
 
-            # Left side behaviors
+            # NEW: Left side behaviors
             elif closest_region == "FR_LEFT":
                 # Wall front-left → move back-left (up in y, negative x)
                 twist.linear.x = -self.v_lin
@@ -280,14 +261,14 @@ class WallFollowerHolonomic(Node):
         # Update last commanded twist
         self.cmd = twist
 
-        # Update last_direction based on current cmd
-        if self.cmd.linear.x > 0 and abs(self.cmd.linear.y) < 1e-3:
+        # Update last_direction based on current twist
+        if twist.linear.x > 0 and abs(twist.linear.y) < 1e-3:
             self.last_direction = "forward"
-        elif self.cmd.linear.x < 0 and abs(self.cmd.linear.y) < 1e-3:
+        elif twist.linear.x < 0 and abs(twist.linear.y) < 1e-3:
             self.last_direction = "backward"
-        elif self.cmd.linear.y > 0 and abs(self.cmd.linear.x) < 1e-3:
+        elif twist.linear.y > 0 and abs(twist.linear.x) < 1e-3:
             self.last_direction = "left"
-        elif self.cmd.linear.y < 0 and abs(self.cmd.linear.x) < 1e-3:
+        elif twist.linear.y < 0 and abs(twist.linear.x) < 1e-3:
             self.last_direction = "right"
 
         # Logging (only on change)

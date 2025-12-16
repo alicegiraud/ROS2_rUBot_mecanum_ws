@@ -3,10 +3,10 @@
     <!-- Launch Arguments -->
     <arg name="distance_limit"  default="0.4"/>
     <arg name="tolerance"       default="0.05"/>
-    <arg name="forward_speed"   default="0.15"/>
-    <arg name="strafe_speed"    default="0.15"/>
-    <arg name="turn_speed"      default="0.3"/>
-    <arg name="time_to_stop"    default="80.0"/>
+    <arg name="forward_speed"   default="0.10"/>
+    <arg name="strafe_speed"    default="0.10"/>
+    <arg name="turn_speed"      default="0.4"/>
+    <arg name="time_to_stop"    default="200.0"/>
 
     <!-- Holonomic Wall Follower Node -->
     <node
