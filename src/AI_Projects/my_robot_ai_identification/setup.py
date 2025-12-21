@@ -26,12 +26,11 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'take_photo_exec = my_robot_ai_identification.take_photo:main',
-            'takePhoto_detectSign_keras_exec = my_robot_ai_identification.takePhoto_detectSign_keras:main',
             'limo_rt_prediction_yolo_exec = my_robot_ai_identification.limo_rt_prediction_yolo:main',
             'rubot_detection_yolo_exec = my_robot_ai_identification.rubot_detection_yolo:main',
             'rubot_detection_wp_yolo_exec = my_robot_ai_identification.rubot_detection_wp_yolo:main',
-            'image_point_distance_node_exec = my_robot_ai_identification.image_point_distance_node:main',
+            'rubot_detection_wp_yolo_sw_exec = my_robot_ai_identification.rubot_detection_wp_yolo_sw:main',
+            'rubot_nav2_wp_yolo_exec = my_robot_ai_identification.rubot_nav2_wp_yolo:main',
         ],
     },
 )

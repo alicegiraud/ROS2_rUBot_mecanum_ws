@@ -8,7 +8,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     pkg_path = get_package_share_directory('my_robot_nav_control')
-    params_file = os.path.join(pkg_path, 'config', 'target_yolo.yaml')
+    params_file = os.path.join(pkg_path, 'config', 'yolo_targets.yaml')
 
     nav_node = Node(
         package='my_robot_nav_control',     # <-- posa el teu paquet real

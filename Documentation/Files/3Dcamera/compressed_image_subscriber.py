@@ -29,14 +29,14 @@ class CompressedImageSubscriber(Node):
 
         self.sub_depth = self.create_subscription(
             CompressedImage,
-            '/camera/depth/image_rect_raw/compressedDepth',
+            '/camera/depth/image_raw/compressedDepth',
             self.depth_callback,
             qos
         )
 
         self.get_logger().info('Subscribed to:')
         self.get_logger().info('  /camera/color/image_raw/compressed')
-        self.get_logger().info('  /camera/depth/image_rect_raw/compressedDepth')
+        self.get_logger().info('  /camera/depth/image_raw/compressedDepth')
 
     def rgb_callback(self, msg: CompressedImage):
         self.get_logger().info(

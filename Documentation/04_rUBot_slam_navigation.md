@@ -50,28 +50,28 @@ These 3 packages are organized inside a `Navigation_Projects` subfolder on src f
 
 ## **4.2. Generate a Map with SLAM**
 
-- Fist of all you have to bringup the robot in the desired environment:
+- Fist of all you have to bringup the robot in the desired environment at the desired initial position (0,0,0):
     - In the case of Virtual environment:
         ````shell
-        ros2 launch my_robot_bringup my_robot_bringup_sw.launch.xml x0:=0.5 y0:=-1.5 yaw0:=1.57 robot:=rubot/rubot_mecanum.urdf custom_world:=square4m_sign.world
+        ros2 launch my_robot_bringup my_robot_bringup_sw.launch.xml x0:=0.0 y0:=0.0 yaw0:=0.0 robot:=rubot/rubot_mecanum.urdf custom_world:=square4m_sign.world
         ````
         >Change the custom_world with the world name you have created
     - In the case of a real robot the bringup is already made when turned on the robot.
       
 - to generate the map:
     - In the case of Virtual environment:
-    ````shell
-    ros2 launch my_robot_cartographer cartographer.launch.py
-    ````
+        ````shell
+        ros2 launch my_robot_cartographer cartographer.launch.py use_sim_time:=true
+        ````
     >use_sim_time:=true when using Gazebo for Virtual simulation. Is true by default in cartographer.launch.py file
-    - In the case of real robot, we have first to initialize the robot POSE on the real map to zero-pose to be used as òrigin` in the map file:
-    ````shell
-    ros2 topic pub --once /reset_odom std_msgs/msg/Bool "{data: true}"
-    ````
+    - In the case of real robot, we have first to initialize the robot POSE on the real map to zero-pose to be used as `origin` in the map file:
+        ````shell
+        ros2 topic pub --once /reset_odom std_msgs/msg/Bool "{data: true}"
+        ````
     - Later we can launch cartographer with:
-    ````shell
-    ros2 launch my_robot_cartographer cartographer.launch.py use_sim_time:=false
-    ````
+        ````shell
+        ros2 launch my_robot_cartographer cartographer.launch.py use_sim_time:=false
+        ````
 - Navigate on the world to store the map
     ````shell
     ros2 run teleop_twist_keyboard teleop_twist_keyboard
@@ -152,14 +152,14 @@ To navigate programmatically using Simple Commander API, you have to proceed wit
 
 - Launch the created python file to define the Initial point and some targets waypoints defined in config folder:
     ````
-    ros2 launch my_robot_nav_control nav_waypoints.launch.py
+    ros2 launch my_robot_nav_control nav_waypoints.launch.py wp_file:=waypoints_sw.yaml
     ````
-- The params are described in `waypoints_params.yaml` file in config folder:
+- The params are described in `waypoints_sw.yaml` file in config folder:
     ````yaml
     nav_waypoints_node:
         ros__parameters:
-            initial_pose: '(0.0,0.0,0.0)'
-            waypoints: '[(1.5,0.7,0.2), (3.4,0.5,-0.3)]'
-            final_pose: '(4.7,0.5,1.57)'
+            initial_pose: '(0.5,-1.5,1.57)'
+            waypoints: '[(0.5,-1.0,1.57), (0.0,0.0,3.14)]'
+            final_pose: '(-1.0,1.0,1.57)'
     ````
     > If waypoints list is empty `waypoints: '[]'` the robot will navigate only from initial_pose to final_pose

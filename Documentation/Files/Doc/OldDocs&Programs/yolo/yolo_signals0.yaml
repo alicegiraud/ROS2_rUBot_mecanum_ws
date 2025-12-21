@@ -39,5 +39,5 @@ object_detection:
       #STOP:      [2.30, -1.00]   # STOP sign position (x, y)
       #Ceda:      [5.00,  0.20]   # Yield (Ceda el paso)
       #Derecha:   [7.10,  1.40]   # Turn right
-      Izquierda: [2.1,0.40]   # Turn left
+      Izquierda: [7.10, -1.40]   # Turn left
       #Prohibido: [9.00,  0.00]   # No entry / forbidden

@@ -1,0 +1,7 @@
+nav_waypoints_node:
+  ros__parameters:
+    initial_pose: [0.5, -1.5, 1.57]
+    waypoints:
+      - [0.5, -1.0, 1.57]
+      - [0.0, 0.0, 3.14]
+    final_pose: [-1.0, 1.0, 1.57]

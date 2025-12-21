@@ -30,7 +30,7 @@ To proceed with the signal identification we first bringup the robot and navigat
     ros2 launch my_robot_bringup my_robot_bringup_sw.launch.xml use_sim_time:=true x0:=0.5 y0:=-1.5 yaw0:=1.57 robot:=rubot/rubot_mecanum.urdf custom_world:=square4m_sign.world
     ````
     >Important: Include a traffic signal in the world. When using "square4m_sign.world" you can change the sign model on line 30 changing the traffic sign model name
-    - In real robot LIMO the bringup is already made when turned on
+    - In real robot rUBot or LIMO the bringup is already made when turned on
 
 - Generate a map
     - In simulation:
@@ -49,26 +49,40 @@ To proceed with the signal identification we first bringup the robot and navigat
 - Navigate using the Map:
     - In simulation:
         ````bash
-        ros2 launch my_robot_navigation2 navigation2_robot.launch.py use_sim_time:=true map_file:=map_square4m_sign.yaml params_file:=limo_sw.yaml
+        ros2 launch my_robot_navigation2 navigation2_robot.launch.py use_sim_time:=true map_file:=map_square4m_sign.yaml params_file:=rubot_sw.yaml
         ````
         >For LIMO: We use `limo_sw.yaml` file. In case we want to priorize the lidar data from odometry data we will use `limo_sw_lidar.yaml`. Equivalent names are found for rUBot real robot.
 
         ![](./Images/07_Yolo/10_nav_sw.png)
-    - In the case of real robot:
-        - Because the bringup is done without the LIMO robot model. The only frames available are
-            - odom: as a ``base_frame_id``
-            - base_link: as the ``robot_base_frame``
-        - We have to create "LIMO_real.yaml" file in "param" folder correcting base_frame_id: "odom" (instead of base_footprint)
+
+    - In real robot rUBot:
         ````shell
         ros2 launch my_robot_navigation2 navigation2_robot.launch.py use_sim_time:=false map_file:=map_project.yaml params_file:=rubot_real.yaml
         ````
         > Be sure the Odometry message is zero when starting the navigation.
 
+        > In the case of `Limo real robot`:
+        >- Because the bringup is done without the LIMO robot model. The only frames available are
+        >    - odom: as a ``base_frame_id``
+        >    - base_link: as the ``robot_base_frame``
+        >- We have to create "LIMO_real.yaml" file in "param" folder correcting base_frame_id: "odom" (instead of base_footprint)
+        
+
 ## **3. Signal detection**
 
-You can make a detection of the signal that the robot find on its path to target pose:
-- for 1 test image (use ``picture_detection_yolo.py``). 
-- for video images from robot camera when moving to target (use ``rubot_detection_yolo.py``)
+The main characteristics of this `object_detection` node are:
+- It uses the YOLOv8 model previously trained to detect the traffic signs.
+- Computes its distance from the robot using:
+    - the depth image from the camera (if available)
+    - or using the information of the traffic signal location in the map (`yolo_signals.yaml` file in `config` folder)
+- Publishes the image wit the detected sign bounding box in the `/inference_result` topic
+- Publishes a new waypoint in the `/traffic_waypoint` topic when a `left`or `right` sign is detected
+
+You can see that this `object_detection` node is:
+- usefull for  `stop`, `ceda` and `forbidden` signs, because the robot has to stop the movement
+- NOT usefull for `turn right` and `turn left` signs, because the node publishes a new `waypoint` who is not able to be automatically integrated in the navigation2 stack.
+
+We have to create a new `custom_nav2` node that can integrate the new waypoint in the navigation2 stack.
 - The schematic nodes, topics and messages are shown below:
     ![](./Images/07_Yolo/09_yolo_detection_topics.png)
 
@@ -91,42 +105,30 @@ You can make a detection of the signal that the robot find on its path to target
         ````
 
 **Hardware** Test in real robot:
-- If you want to execute on real `LIMO robot`, you have to install and execute on the Limo robot container:
-    ````shell
-    apt update
-    apt install python3-pip
-    pip install ultralytics
-    # needed numpy version compatible
-    pip3 uninstall numpy
-    pip3 install "numpy<2.0"
-    #
-    apt install git
-    git clone https://github.com/manelpuig/ROS2_rUBot_mecanum_ws.git
-    source /opt/ros/humble/setup.bash
-    apt install python3-colcon-common-extensions
-    apt install build-essential
-    colcon build
-    source install/setup.bash
-    ros2 run my_robot_ai_identification limo_rt_prediction_yolo_exec
-    ````
-
 - If you want to execute on real `rUBot robot`, you have to execute:
     ````shell
     ros2 launch my_robot_ai_identification rubot_detection_wp_yolo.launch.py
     ````
-The main characteristics of this `object_detection` node are:
-- It uses the YOLOv8 model previously trained to detect the traffic signs.
-- Computes its distance from the robot using:
-    - the depth image from the camera (if available)
-    - or using the information of the traffic signal location in the map (`yolo_signals.yaml` file in `config` folder)
-- Publishes the image wit the detected sign bounding box in the `/inference_result` topic
-- Publishes a new waypoint in the `/traffic_waypoint` topic when a `left`or `right` sign is detected
+    > - If you want to execute on real `LIMO robot`, you have to install and execute on the Limo robot container:
 
-You can see that this `object_detection` node is:
-- usefull for  `stop`, `ceda` and `forbidden` signs, because the robot has to stop the movement
-- NOT usefull for `turn right` and `turn left` signs, because the node publishes a new `waypoint` who is not able to be automatically integrated in the navigation2 stack.
+    >    ````shell
+    >    apt update
+    >    apt install python3-pip
+    >    pip install ultralytics
+    >    # needed numpy version compatible
+    >    pip3 uninstall numpy
+    >    pip3 install "numpy<2.0"
+    >    #
+    >    apt install git
+    >    git clone https://github.com/manelpuig/ROS2_rUBot_mecanum_ws.git
+    >    source /opt/ros/humble/setup.bash
+    >    apt install python3-colcon-common-extensions
+    >    apt install build-essential
+    >    colcon build
+    >    source install/setup.bash
+    >    ros2 run my_robot_ai_identification limo_rt_prediction_yolo_exec
+    >    ````
 
-We have to create a new `custom_nav2` node that can integrate the new waypoint in the navigation2 stack.
 
 ## **4. Custom Navigation with signal detection**
 
@@ -151,31 +153,36 @@ To launch the robot Custom Navigation with signal detection, use:
     ros2 run rqt_image_view rqt_image_view /inference_result
     ````
 
-## **5. Distance with 3D-Camera**
+## **5. Navigation control with signal identification**
 
-We are using a RealSense D435i camera that provides RGB and Depth images. The depth image is used to compute the distance from the robot to the detected traffic sign.
+You can also launch a complete vavigation control node that includes:
+- Navigation2 stack
+- YOLO signal detection node
+- and starts after a controlled delay, a Custom navigation node that integrates the detected waypoint in the navigation2 stack
 
-- Launch the RealSense camera node:
+In `simulation`:
+- To launch the Navigation2, use:
     ````shell
-    ros2 launch realsense2_camera rs_launch.py \
-    initial_reset:=true \
-    enable_color:=true \
-    enable_depth:=true \
-    align_depth:=true \
-    enable_sync:=false \
-    pointcloud.enable:=false \
-    depth_module.depth_profile:=640x360x15 \
-    rgb_camera.color_profile:=640x480x30 \
-    enable_infra1:=false enable_infra2:=false
+    ros2 launch my_robot_navigation2 navigation2_robot.launch.py use_sim_time:=true map_file:=map_square4m_sign.yaml params_file:=rubot_sw_lidar.yaml
     ````
-- The depth image topic is: `/camera/aligned_depth_to_color/image_raw`
-- Launch the node to see the distance of a point in the RGB image to a robot frame:
+- To launch the navigation control with signal detection, use:
     ````shell
-    ros2 launch my_camera_tools image_point_distance.launch.py \
-    depth_topic:=/camera/aligned_depth_to_color/image_raw \
-    camera_info_topic:=/camera/color/camera_info \
-    camera_frame:=camera_color_optical_frame \
-    target_frame:=odom \
-    u:=320 v:=240
+    ros2 launch my_robot_ai_identification rubot_nav2_yolo_control.launch.py nav_params:=yolo_targets_sw.yaml yolo_params:=yolo_signals.yaml nav_start_delay:=5.0
     ````
-- You can change the pixel coordinates `u` and `v` to measure the distance to other points in the image.
+- Launch the `complete navigation control` with signal detection in real robot rUBot:
+    ````shell
+    ros2 launch my_robot_ai_identification rubot_detection_nav2_yolo_control.launch.py map_file:=map_square4m_sign.yaml params_file:=rubot_sw_lidar.yaml use_sim_time:=true yolo_params:=yolo_signals.yaml nav_params:=yolo_targets_sw.yaml nav_start_delay:=5.0
+    ````
+In `real robot`:
+- To launch the Navigation2, use:
+    ````shell
+    ros2 launch my_robot_navigation2 navigation2_robot.launch.py use_sim_time:=false map_file:=map_project.yaml params_file:=rubot_hw_lidar.yaml
+    ````
+- To launch the navigation control with signal detection, use:
+    ````shell
+    ros2 launch my_robot_ai_identification rubot_nav2_yolo_control.launch.py nav_params:=yolo_targets.yaml yolo_params:=yolo_signals.yaml nav_start_delay:=5.0
+    ````
+- Launch the `complete navigation control` with signal detection in real robot rUBot:
+    ````shell
+    ros2 launch my_robot_ai_identification rubot_detection_nav2_yolo_control.launch.py map_file:=map_project.yaml params_file:=rubot_sw_lidar.yaml use_sim_time:=false yolo_params:=yolo_signals.yaml nav_params:=yolo_targets.yaml nav_start_delay:=5.0
+    ````

@@ -5,11 +5,11 @@ custom_nav2:
     initial_pose: [0.0,0.0,0.0]
 
     # Final target pose [x, y, yaw] in "map" frame
-    target_pose: [3.5,-0.2,1.57]
+    target_pose: [4.6,0.2,1.57]
 
     # Default intermediate waypoint [x, y, yaw]
     # (will be overridden if /traffic_waypoint is received)
-    waypoint: [2.1,-0.2,0.0]
+    waypoint: [1.45,0.4,-0.2]
 
     # Time (seconds) to wait for /traffic_waypoint
     wait_for_traffic_wp: 5.0

@@ -14,7 +14,7 @@
 
     <General>
       <!-- Bind CycloneDDS to this PC's IP -->
-      <NetworkInterfaceAddress>auto</NetworkInterfaceAddress>
+      <NetworkInterfaceAddress>192.168.1.55</NetworkInterfaceAddress>
       <AllowMulticast>true</AllowMulticast>
     </General>
 

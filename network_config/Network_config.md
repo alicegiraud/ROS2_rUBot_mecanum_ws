@@ -76,7 +76,7 @@ We will:
         export ROS_DOMAIN_ID=1               # group/domain ID
         export ROS_LOCALHOST_ONLY=0          # allow communication with other machines
         export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-        export CYCLONEDDS_URI=file:///~/Desktop/ROS2_rUBot_mecanum_ws/config/cyclonedds_pc.xml
+        export CYCLONEDDS_URI=file:///home/student/Desktop/ROS2_rUBot_mecanum_ws/network_config/cyclonedds_pc.xml
         ````
     - On the robot:
 
@@ -90,7 +90,7 @@ We will:
         export ROS_DOMAIN_ID=1               # group/domain ID
         export ROS_LOCALHOST_ONLY=0          # allow communication with other machines
         export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-        export CYCLONEDDS_URI=file:///home/ubuntu/ROS2_rUBot_mecanum_ws/config/cyclonedds_robot.xml
+        export CYCLONEDDS_URI=file:///home/ubuntu/ROS2_rUBot_mecanum_ws/network_config/cyclonedds_robot.xml
         ````
         > You will have to connect to the robot via SSH to edit its `.bashrc`.
         > Sometimes you will have to regenerate the keys to connect to the raspberry pi. Type on a `cmd`terminal on the PC:
@@ -224,7 +224,7 @@ Students in the lab they only need to:
     export ROS_DOMAIN_ID=1               # group/domain ID
     export ROS_LOCALHOST_ONLY=0          # allow communication with other machines
     export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-    export CYCLONEDDS_URI=file:///~/Desktop/ROS2_rUBot_mecanum_ws/config/cyclonedds_pc.xml
+    export CYCLONEDDS_URI=file:///home/student/Desktop/ROS2_rUBot_mecanum_ws/network_config/cyclonedds_pc.xml
     ````
 
 - To stop the container:

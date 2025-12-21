@@ -153,3 +153,8 @@ To modify the my_robot.service:
     sudo systemctl status my_robot.service
     sudo journalctl -u my_robot -f
     ```
+- Because of the other services has been authomatically stopped, we have to manually start them again:
+    ```bash
+    sudo systemctl start my_rosbridge.service
+    sudo systemctl start my_robot_web.service
+    ```

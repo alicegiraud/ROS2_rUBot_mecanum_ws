@@ -16,8 +16,19 @@
   <depend>tf_transformations</depend>
   <depend>cv_bridge</depend>
   <depend>tf2_ros</depend>
-  <depend>vision_msgs</depend>
   <depend>custom_msgs</depend>
+
+  <!-- Launch system -->
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>ament_index_python</exec_depend>
+
+  <!-- External runtime systems started by the launch -->
+  <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+
+  <!-- Other workspace packages required at runtime -->
+  <exec_depend>my_robot_navigation2</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

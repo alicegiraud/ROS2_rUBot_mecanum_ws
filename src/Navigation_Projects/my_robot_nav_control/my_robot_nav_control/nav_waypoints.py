@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import time
-import ast
 
 import rclpy
 from rclpy.node import Node
@@ -16,72 +15,48 @@ class NavigationTask(Node):
 
         self.navigator = BasicNavigator()
 
-        # Declare parameters
-        self.declare_parameter('initial_pose', '(0.0,0.0,0.0)')
-        self.declare_parameter('waypoints', '[]')
-        self.declare_parameter('final_pose', '(0.0,0.0,0.0)')
+        # Declare parameters as lists (not strings)
+        self.declare_parameter('initial_pose', [0.0, 0.0, 0.0])
+        self.declare_parameter('waypoints', [])
+        self.declare_parameter('final_pose', [0.0, 0.0, 0.0])
 
-        # Read parameters
-        initial_pose_str = self.get_parameter('initial_pose').value
-        waypoints_str = self.get_parameter('waypoints').value
-        final_pose_str = self.get_parameter('final_pose').value
+        # Read parameters (already parsed)
+        initial_pose_val = self.get_parameter('initial_pose').value
+        waypoints_val = self.get_parameter('waypoints').value
+        final_pose_val = self.get_parameter('final_pose').value
 
-        self.get_logger().info(f'Initial pose: {initial_pose_str}')
-        self.get_logger().info(f'Waypoints: {waypoints_str}')
-        self.get_logger().info(f'Final pose: {final_pose_str}')
+        self.initial_pose = self._parse_points(initial_pose_val, expect='pose')
+        self.waypoints = self._parse_points(waypoints_val, expect='waypoints')
+        self.final_pose = self._parse_points(final_pose_val, expect='pose')
 
-        # Parse with SINGLE function
-        self.initial_pose = self._parse_points(initial_pose_str)
-        self.waypoints = self._parse_points(waypoints_str)
-        self.final_pose = self._parse_points(final_pose_str)
+        self.get_logger().info(f"Initial pose: {self.initial_pose}")
+        self.get_logger().info(f"Waypoints: {self.waypoints}")
+        self.get_logger().info(f"Final pose: {self.final_pose}")
 
-        # Validate
-        if not isinstance(self.initial_pose, tuple):
-            raise RuntimeError("Initial pose must be a tuple (x,y,yaw).")
-
-        if not isinstance(self.final_pose, tuple):
-            raise RuntimeError("Final pose must be a tuple (x,y,yaw).")
-
-        if not isinstance(self.waypoints, list):
-            raise RuntimeError("Waypoints must be a list of tuples.")
-
-    # ------------------------------------------------------------
-    # SINGLE FUNCTION FOR PARSING
-    # ------------------------------------------------------------
-    def _parse_points(self, input_str):
+    def _parse_points(self, val, expect: str):
         """
-        Converts:
-          '(x, y, yaw)'   -> tuple
-          '[(x,y,yaw), ...]' -> list of tuples
-          '[]' -> empty list
+        expect='pose'      -> expects [x,y,yaw] and returns (x,y,yaw)
+        expect='waypoints' -> expects [] or [[x,y,yaw], ...] and returns [(x,y,yaw), ...]
         """
-        try:
-            data = ast.literal_eval(input_str)
-        except Exception as e:
-            self.get_logger().error(f'Error parsing parameter "{input_str}": {e}')
-            raise
+        if expect == 'pose':
+            if not isinstance(val, (list, tuple)) or len(val) != 3:
+                raise ValueError(f'Expected [x,y,yaw]. Got: {val}')
+            return (float(val[0]), float(val[1]), float(val[2]))
 
-        # CASE A: a single pose -> must be tuple of length 3
-        if isinstance(data, tuple):
-            if len(data) != 3:
-                raise ValueError(f"Tuple must have 3 elements. Got: {data}")
-            return (float(data[0]), float(data[1]), float(data[2]))
+        if expect == 'waypoints':
+            if val is None:
+                return []
+            if not isinstance(val, list):
+                raise ValueError(f'Expected list of waypoints. Got: {val}')
+            parsed = []
+            for item in val:
+                if not isinstance(item, (list, tuple)) or len(item) != 3:
+                    raise ValueError(f'Each waypoint must be [x,y,yaw]. Got: {item}')
+                parsed.append((float(item[0]), float(item[1]), float(item[2])))
+            return parsed
 
-        # CASE B: list of poses
-        if isinstance(data, list):
-            parsed_list = []
-            for item in data:
-                if not (isinstance(item, tuple) and len(item) == 3):
-                    raise ValueError(f"Each waypoint must be a tuple (x,y,yaw). Got: {item}")
-                parsed_list.append((float(item[0]), float(item[1]), float(item[2])))
-            return parsed_list
+        raise ValueError(f'Unknown expect: {expect}')
 
-        # Otherwise invalid format
-        raise ValueError(f"Invalid parameter format: {input_str}")
-
-    # ------------------------------------------------------------
-    # POSE CREATION
-    # ------------------------------------------------------------
     def _create_pose_stamped(self, x, y, yaw):
         q_x, q_y, q_z, q_w = tf_transformations.quaternion_from_euler(0.0, 0.0, yaw)
 
@@ -100,9 +75,6 @@ class NavigationTask(Node):
 
         return pose
 
-    # ------------------------------------------------------------
-    # NAVIGATION LOGIC
-    # ------------------------------------------------------------
     def set_initial_pose(self):
         x, y, yaw = self.initial_pose
         self.navigator.setInitialPose(self._create_pose_stamped(x, y, yaw))
@@ -115,24 +87,18 @@ class NavigationTask(Node):
     def run_navigation(self):
         final_x, final_y, final_yaw = self.final_pose
 
-        # No waypoints → go directly to final pose
         if len(self.waypoints) == 0:
             self.get_logger().info("No waypoints. Going directly to final pose.")
             goal = self._create_pose_stamped(final_x, final_y, final_yaw)
             self.navigator.goToPose(goal)
         else:
             self.get_logger().info(f"Following {len(self.waypoints)} waypoints and then final pose.")
-            pose_list = [
-                self._create_pose_stamped(x, y, yaw)
-                for (x, y, yaw) in self.waypoints
-            ]
-            # Add final pose as last waypoint
+            pose_list = [self._create_pose_stamped(x, y, yaw) for (x, y, yaw) in self.waypoints]
             pose_list.append(self._create_pose_stamped(final_x, final_y, final_yaw))
             self.navigator.followWaypoints(pose_list)
 
-        # Wait for completion
         while not self.navigator.isTaskComplete():
-            time.sleep(0.1)
+            rclpy.spin_once(self, timeout_sec=0.1)
 
         result = self.navigator.getResult()
         self.get_logger().info(f"Navigation finished: {result}")

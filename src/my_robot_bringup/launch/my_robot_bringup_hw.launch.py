@@ -7,70 +7,69 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Comm
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+
 def generate_launch_description():
-    # ===================================================================================
-    #   Declaració dels arguments configurables per a tot el robot
-    # ===================================================================================
-    
-    # Argument per al temps de simulació, per ser consistent a tot el llançament
-    declare_use_sim_time_arg = DeclareLaunchArgument(
-        'use_sim_time',
-        default_value='false',
-        description='Use simulation (Gazebo) clock if true'
-    )
-    
-    # Arguments per al driver del robot
-    declare_mecanum_serial_port_arg = DeclareLaunchArgument(
-        'mecanum_serial_port', default_value='/dev/ttyACM0',
-        description='Port sèrie per a la placa dels motors'
-    )
-
-    # Arguments per al LiDAR
-    declare_rplidar_serial_port_arg = DeclareLaunchArgument(
-        'rplidar_serial_port', default_value='/dev/ttyUSB0',
-        description='Port sèrie per al RPLiDAR'
-    )
-    declare_rplidar_frame_id_arg = DeclareLaunchArgument(
-        'rplidar_frame_id', default_value='base_link',
-        description='Frame ID per a les dades del LiDAR'
-    )
-    
-    # Arguments per a la Càmera
-    declare_camera_width_arg = DeclareLaunchArgument(
-        'camera_width', default_value='160',
-        description='Amplada de la imatge de la càmera'
-    )
-    declare_camera_height_arg = DeclareLaunchArgument(
-        'camera_height', default_value='120',
-        description='Alçada de la imatge de la càmera'
-    )
-
-    # Argument per al model del robot
-    declare_robot_model_arg = DeclareLaunchArgument(
-        'robot_model',
-        default_value='robot_arm/my_simple_robot.urdf',
-        description='Nom del fitxer URDF/XACRO dins del paquet de descripció'
-    )
-
-    # ===================================================================================
-    #   Preparació de la configuració dels nodes
-    # ===================================================================================
-    
-    # Obtenir el valor dels arguments per poder utilitzar-los
-    use_sim_time = LaunchConfiguration('use_sim_time')
+    # ================================================================
+    # Arguments globals (només els que realment uses)
+    # ================================================================
     robot_model = LaunchConfiguration('robot_model')
 
-    # Lògica per carregar el model del robot (URDF/XACRO)
-    # IMPORTANT: Canvia 'my_robot_description' pel nom real del teu paquet de descripció.
+    mecanum_serial_port = LaunchConfiguration('mecanum_serial_port')
+    rplidar_serial_port = LaunchConfiguration('rplidar_serial_port')
+    rplidar_frame_id = LaunchConfiguration('rplidar_frame_id')
+
+    camera_width = LaunchConfiguration('camera_width')
+    camera_height = LaunchConfiguration('camera_height')
+    usb_video_device = LaunchConfiguration('usb_video_device')
+
+    declare_robot_model = DeclareLaunchArgument(
+        'robot_model',
+        default_value='robot_arm/my_simple_robot.urdf',
+        description='URDF/XACRO path inside my_robot_description/urdf'
+    )
+
+    declare_mecanum_serial_port = DeclareLaunchArgument(
+        'mecanum_serial_port', default_value='/dev/ttyACM0',
+        description='Serial port for Nano mecanum driver'
+    )
+
+    declare_rplidar_serial_port = DeclareLaunchArgument(
+        'rplidar_serial_port', default_value='/dev/ttyUSB0',
+        description='Serial port for RPLidar'
+    )
+
+    declare_rplidar_frame_id = DeclareLaunchArgument(
+        'rplidar_frame_id', default_value='base_link',
+        description='Frame ID for RPLidar data'
+    )
+
+    declare_camera_width = DeclareLaunchArgument(
+        'camera_width', default_value='160',
+        description='Width of the camera image'
+    )
+
+    declare_camera_height = DeclareLaunchArgument(
+        'camera_height', default_value='120',
+        description='Height of the camera image'
+    )
+
+    declare_usb_video_device = DeclareLaunchArgument(
+        'usb_video_device', default_value='/dev/video0',
+        description='Video device for USB camera'
+    )
+
+    # ================================================================
+    # Robot description (URDF/XACRO) + robot_state_publisher
+    # ================================================================
     robot_description_content = Command([
         'xacro ',
         PathJoinSubstitution([
-            FindPackageShare('my_robot_description'), 'urdf', robot_model
+            FindPackageShare('my_robot_description'),
+            'urdf',
+            robot_model
         ])
     ])
 
-    # Definició del node robot_state_publisher
-    # El node joint_state_publisher esta definit en el driver
     robot_state_publisher_node = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -78,61 +77,70 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {'robot_description': robot_description_content},
-            {'use_sim_time': use_sim_time}
         ]
     )
 
-    # Inclusió dels altres llançadors de drivers
-    start_mecanum_driver_cmd = IncludeLaunchDescription(
+    # ================================================================
+    # Inclusió dels sub-launchs de hardware
+    # ================================================================
+    robot_driver_hw_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('my_robot_driver'), 'launch', 'rubot_nano_driver_mecanum.launch.py')
+            os.path.join(
+                get_package_share_directory('my_robot_bringup'),
+                'launch',
+                'robot_driver_hw.launch.py'
+            )
         ),
         launch_arguments={
-            'serial_port': LaunchConfiguration('mecanum_serial_port'),
-            'use_sim_time': use_sim_time
-        }.items()
-    )
-    
-    start_rplidar_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('rplidar_ros'), 'launch', 'rplidar_a1_launch.py')
-        ),
-        launch_arguments={
-            'serial_port': LaunchConfiguration('rplidar_serial_port'),
-            'frame_id': LaunchConfiguration('rplidar_frame_id'),
-            'use_sim_time': use_sim_time
+            'mecanum_serial_port': mecanum_serial_port,
         }.items()
     )
 
-    start_usb_cam_cmd = IncludeLaunchDescription(
+    usb_cam_hw_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('my_robot_bringup'), 'launch', 'usb_cam_custom.launch.py')
+            os.path.join(
+                get_package_share_directory('my_robot_bringup'),
+                'launch',
+                'usb_cam_hw.launch.py'
+            )
         ),
         launch_arguments={
-            'image_width': LaunchConfiguration('camera_width'),
-            'image_height': LaunchConfiguration('camera_height'),
-            'use_sim_time': use_sim_time
+            'image_width': camera_width,
+            'image_height': camera_height,
+            'video_device': usb_video_device,
         }.items()
     )
 
-    # ===================================================================================
-    #   Creació de la descripció del llançament final
-    # ===================================================================================
+    rplidar_hw_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('my_robot_bringup'),
+                'launch',
+                'rplidar_hw.launch.py'
+            )
+        ),
+        launch_arguments={
+            'rplidar_serial_port': rplidar_serial_port,
+            'rplidar_frame_id': rplidar_frame_id,
+        }.items()
+    )
+
+    # ================================================================
+    # Construcció LaunchDescription
+    # ================================================================
     ld = LaunchDescription()
 
-    # Afegir tots els arguments
-    ld.add_action(declare_use_sim_time_arg)
-    ld.add_action(declare_mecanum_serial_port_arg)
-    ld.add_action(declare_rplidar_serial_port_arg)
-    ld.add_action(declare_rplidar_frame_id_arg)
-    ld.add_action(declare_camera_width_arg)
-    ld.add_action(declare_camera_height_arg)
-    ld.add_action(declare_robot_model_arg)
-    
-    # Afegir tots els nodes i llançadors
+    ld.add_action(declare_robot_model)
+    ld.add_action(declare_mecanum_serial_port)
+    ld.add_action(declare_rplidar_serial_port)
+    ld.add_action(declare_rplidar_frame_id)
+    ld.add_action(declare_camera_width)
+    ld.add_action(declare_camera_height)
+    ld.add_action(declare_usb_video_device)
+
     ld.add_action(robot_state_publisher_node)
-    ld.add_action(start_mecanum_driver_cmd)
-    ld.add_action(start_rplidar_cmd)
-    ld.add_action(start_usb_cam_cmd)
+    ld.add_action(robot_driver_hw_launch)
+    ld.add_action(usb_cam_hw_launch)
+    ld.add_action(rplidar_hw_launch)
 
     return ld

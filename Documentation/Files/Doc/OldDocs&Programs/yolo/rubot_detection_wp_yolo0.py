@@ -154,7 +154,7 @@ class YoloObjectDetection(Node):
         sx, sy = self.sign_positions[sign_name]
 
         # Lateral offset distance in meters
-        d = 0.65
+        d = 0.3
 
         # Use robot yaw to define lateral directions
         if side == 'right':
@@ -303,7 +303,7 @@ class YoloObjectDetection(Node):
             if wp is not None:
                 self.waypoint_pub.publish(wp)
 
-        elif "Izquierda" in detected_signs: #and self.should_react("Izquierda"):
+        elif "Izquierda" in detected_signs and self.should_react("Izquierda"):
             dist = self.get_sign_distance("Izquierda") or 0.0
             infer_t   = self.last_inference_time   if self.last_inference_time   is not None else 0.0
             trans_t   = self.last_transport_delay  if self.last_transport_delay  is not None else 0.0

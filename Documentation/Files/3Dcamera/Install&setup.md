@@ -97,7 +97,7 @@ cd ~/ROS2_rUBot_mecanum_ws/src
 git clone --branch main https://github.com/orbbec/OrbbecSDK_ROS2.git
 cd ..
 rosdep install --from-paths src --ignore-src -r -y
-colcon build --symlink-install
+colcon build
 source install/setup.bash
 ```
 Define the UDEV rules:
@@ -144,20 +144,19 @@ chmod +x install_udev_rules.sh
 sudo ./install_udev_rules.sh
 ```
 
-Install from source the ROS2 wrapper: https://github.com/orbbec/ros2_orbbec_camera.git
+Install from source the ROS2 wrapper: https://github.com/orbbec/OrbbecSDK_ROS2.git
 - Install ROS2 wrapper as in PC Ubuntu 22 section and launch with:
 ```bash
-mkdir -p ~/ros2_orbbec_ws/src
-cd ~/ros2_orbbec_ws/src
-git clone https://github.com/orbbec/ros2_orbbec_camera.git
+cd src
+git clone --branch main https://github.com/orbbec/OrbbecSDK_ROS2.git
 cd ..
 rosdep install --from-paths src --ignore-src -r -y
-colcon build --symlink-install
+colcon build
 source install/setup.bash
 ```
 - Launch with:
 ```bash
-ros2 launch ros2_orbbec_camera dabai_a.launch.py
+ros2 launch ros2_orbbec_camera dabai.launch.py
 ros2 launch orbbec_camera gemini2.launch.py
 ros2 launch orbbec_camera astra2.launch.py
 ```
@@ -178,22 +177,22 @@ To test if the camera is working properly, you can:
 - review the info of image topics:
   ```bash
   ros2 topic info /camera/color/image_raw/compressed
-  ros2 topic info /camera/depth/image_rect_raw/compressedDepth
+  ros2 topic info /camera/depth/image_raw/compressedDepth
   ```
 - review the hz and bw of image topics:
   ```bash
-  ros2 run topic_tools hz /camera/color/image_raw/compressed
-  ros2 run topic_tools bw /camera/color/image_raw/compressed
-  ros2 run topic_tools hz /camera/depth/image_rect_raw/compressedDepth
-  ros2 run topic_tools bw /camera/depth/image_rect_raw/compressedDepth
+  ros2 topic hz /camera/color/image_raw/compressed
+  ros2 topic bw /camera/color/image_raw/compressed
+  ros2 topic hz /camera/depth/image_raw/compressedDepth
+  ros2 topic bw /camera/depth/image_raw/compressedDepth
   ```
 - Create a simple Python node that subscribes to the topics:
     - /camera/color/image_raw/compressed
-    - /camera/depth/image_rect_raw/compressedDepth
+    - /camera/depth/image_raw/compressedDepth
 - Execute this node:
   ```bash
   chmod +x compressed_image_subscriber.py
-  ./compressed_image_subscriber.py
+  python3 compressed_image_subscriber.py
   ```
 - Use `rqt_image_view` to visualize the topics:
   ```bash
@@ -201,7 +200,7 @@ To test if the camera is working properly, you can:
   ``` 
   - Select topic: `/camera/color/image_raw` → Transport: `compressed`
 
-  - Select topic: `/camera/depth/image_rect_raw` → Transport: `compressedDepth`
+  - Select topic: `/camera/depth/image_raw` → Transport: `compressedDepth`
 - Verify the clocks are sync:
   ```bash
   timedatectl

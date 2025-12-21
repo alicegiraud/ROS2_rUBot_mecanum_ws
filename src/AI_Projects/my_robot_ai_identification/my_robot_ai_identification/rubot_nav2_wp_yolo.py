@@ -138,6 +138,21 @@ def main(args=None):
     navigation_node.get_logger().info("Navigating to intermediate waypoint...")
     navigation_node.go_to_pose(wp_pose)
 
+    navigation_node.get_logger().info("Reading Signal...")
+    
+    pitstop = navigation_node.get_clock().now().nanoseconds / 1e9
+    while rclpy.ok():
+        now = navigation_node.get_clock().now().nanoseconds / 1e9
+        if (now - pitstop) >= 1.5: #Temps de pausa en front del senyal 
+            break
+        rclpy.spin_once(navigation_node, timeout_sec=0.1)
+
+    # --- 3) Anar al waypoint (YOLO o YAML) ---
+    wp_pose = navigation_node.get_selected_waypoint_pose()
+    navigation_node.get_logger().info("Navigating to corrected waypoint...")
+    navigation_node.go_to_pose(wp_pose)
+
+
     # --- 2) Anar al destí final ---
     x_t, y_t, yaw_t = navigation_node.target_pose_xyz
     target_pose = navigation_node.create_pose_stamped(x_t, y_t, yaw_t)
