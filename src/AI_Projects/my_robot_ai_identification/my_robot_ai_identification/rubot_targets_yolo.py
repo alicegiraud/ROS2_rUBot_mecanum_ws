@@ -10,7 +10,7 @@ import tf_transformations
 class NavigationTask(Node):
     def __init__(self):
         super().__init__('custon_nav2')
-
+        self.declare_parameter('use_sim_time', False)
         # --- Nav2 Simple Commander ---
         self.navigator = BasicNavigator()
 
@@ -99,6 +99,7 @@ class NavigationTask(Node):
         )
 
         while not self.navigator.isTaskComplete():
+            rclpy.spin_once(self, timeout_sec=0.1)
             feedback = self.navigator.getFeedback()
             # Si vols més info, descomenta:
             # if feedback is not None and hasattr(feedback, 'distance_remaining'):

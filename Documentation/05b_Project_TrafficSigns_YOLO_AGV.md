@@ -140,49 +140,40 @@ Considering the previous `object_detection` node, we have created a new `custom_
     ![](./Images/07_Yolo/12_yolo_custom_nav2.png)
 
 To launch the robot Custom Navigation with signal detection, use:
-- Launch the `object_detection` node with:
+- Bringup your robot (only in simulation):
     ````shell
-    ros2 launch my_robot_ai_identification rubot_detection_wp_yolo.launch.py topic:=/image_raw front_distance:=0.3 Izquierda:=[1.80, 0.0]
+    ros2 launch my_robot_bringup my_robot_bringup_sw.launch.xml use_sim_time:=true x0:=0.5 y0:=-1.5 yaw0:=1.57 robot:=rubot/rubot_mecanum.urdf custom_world:=square4m_sign.world
     ````
-- Launch the `custom_nav2` node with:
-    ````shell
-    ros2 launch my_robot_nav_control rubot_nav2_wp_yolo.launch.py target_pose:=[3.5,-0.2, 1.57]
-    ````
-- use ``rqt_image_view`` in a new terminal
-    ````shell
-    ros2 run rqt_image_view rqt_image_view /inference_result
-    ````
-
-## **5. Navigation control with signal identification**
-
-You can also launch a complete vavigation control node that includes:
-- Navigation2 stack
-- YOLO signal detection node
-- and starts after a controlled delay, a Custom navigation node that integrates the detected waypoint in the navigation2 stack
-
-In `simulation`:
-- To launch the Navigation2, use:
+- Launch the `Navigation2 stack`, use:
     ````shell
     ros2 launch my_robot_navigation2 navigation2_robot.launch.py use_sim_time:=true map_file:=map_square4m_sign.yaml params_file:=rubot_sw_lidar.yaml
     ````
-- To launch the navigation control with signal detection, use:
+    > In real robot case use `use_sim_time:=false` and `map_project.yaml` and `rubot_hw_lidar.yaml` files
+- Launch the `object_detection` node with:
     ````shell
-    ros2 launch my_robot_ai_identification rubot_nav2_yolo_control.launch.py nav_params:=yolo_targets_sw.yaml yolo_params:=yolo_signals.yaml nav_start_delay:=5.0
+    ros2 launch my_robot_ai_identification rubot_detection_yolo.launch.py use_sim_time:=true yolo_params:=yolo_signals_sw.yaml
     ````
-- Launch the `complete navigation control` with signal detection in real robot rUBot:
+    > In real robot case use `use_sim_time:=false` and `yolo_params:=yolo_signals.yaml`
+- Launch the `custom_nav2` node with:
     ````shell
-    ros2 launch my_robot_ai_identification rubot_detection_nav2_yolo_control.launch.py map_file:=map_square4m_sign.yaml params_file:=rubot_sw_lidar.yaml use_sim_time:=true yolo_params:=yolo_signals.yaml nav_params:=yolo_targets_sw.yaml nav_start_delay:=5.0
+    ros2 launch my_robot_ai_identification rubot_targets_yolo.launch.py use_sim_time:=true nav_params:=yolo_targets_sw.yaml
     ````
+    > In real robot case use `use_sim_time:=false` and `nav_params:=yolo_targets.yaml`
+
+We have created a full launch file that launches the 3 nodes together:
+- `Navigation2 stack`
+- `object_detection` node
+- and starts after a controlled delay, the `custom_nav2` node that integrates the detected waypoint in the navigation2 stack
+
+In `simulation`:
+````shell
+ros2 launch my_robot_ai_identification rubot_nav2_detection_targets.launch.py use_sim_time:=true map_file:=map_square4m_sign.yaml params_file:=rubot_sw_lidar.yaml yolo_params:=yolo_signals_sw.yaml nav_params:=yolo_targets_sw.yaml nav_start_delay:=2.0
+````
 In `real robot`:
-- To launch the Navigation2, use:
-    ````shell
-    ros2 launch my_robot_navigation2 navigation2_robot.launch.py use_sim_time:=false map_file:=map_project.yaml params_file:=rubot_hw_lidar.yaml
-    ````
-- To launch the navigation control with signal detection, use:
-    ````shell
-    ros2 launch my_robot_ai_identification rubot_nav2_yolo_control.launch.py nav_params:=yolo_targets.yaml yolo_params:=yolo_signals.yaml nav_start_delay:=5.0
-    ````
-- Launch the `complete navigation control` with signal detection in real robot rUBot:
-    ````shell
-    ros2 launch my_robot_ai_identification rubot_detection_nav2_yolo_control.launch.py map_file:=map_project.yaml params_file:=rubot_sw_lidar.yaml use_sim_time:=false yolo_params:=yolo_signals.yaml nav_params:=yolo_targets.yaml nav_start_delay:=5.0
-    ````
+````shell
+ros2 launch my_robot_ai_identification rubot_nav2_detection_targets.launch.py use_sim_time:=false map_file:=map_project.yaml params_file:=rubot_hw_lidar.yaml yolo_params:=yolo_signals.yaml nav_params:=yolo_targets.yaml nav_start_delay:=2.0
+````
+
+| AI Identification and Navigation video | Code execution video |
+|----------|------------|
+| [▶️ rUBot Traffic signal Detection & Autonomous Navigation](./Images/07_Yolo/Yolo_left.mp4) | [▶️ rUBot code execution](./Images/07_Yolo/YoloSignalWaypoint.webm) |

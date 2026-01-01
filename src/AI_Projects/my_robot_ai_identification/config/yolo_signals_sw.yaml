@@ -1,15 +1,17 @@
 object_detection:
   ros__parameters:
     modelYolo: yolov8n_custom.pt
-    topic: /image_raw
+    topic: /rubot/camera1/image_raw
     twist_frequency: 20.0
     front_distance: 0.3
 
-    # Coordinates MUST be in the same frame used for distance checks.
-    # If you compare against /odom, these must be in odom.
+    # Frames for TF
+    sign_frame: map
+    base_frame: base_link   # or base_footprint
+    
     sign_positions:
-      Izquierda: [0.5, -0.5]
-      # STOP: [0.5, -0.5]
+      #Izquierda: [0.5, -0.5]
+      STOP: [0.5, -0.5]
       # Ceda: [0.5, -0.5]
       # Derecha: [0.5, -0.5]
       # Prohibido: [0.5, -0.5]

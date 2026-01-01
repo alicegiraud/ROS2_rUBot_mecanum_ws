@@ -109,18 +109,24 @@ def generate_launch_description():
 
         yolo_node = Node(
             package='my_robot_ai_identification',
-            executable='rubot_detection_wp_yolo_exec',
+            executable='rubot_detection_yolo_exec',
             name='object_detection',
             output='screen',
-            parameters=[yolo_yaml],
+            parameters=[
+                yolo_yaml,
+                {'use_sim_time': use_sim_time.perform(context)},
+            ],
         )
 
         nav_node = Node(
             package='my_robot_ai_identification',
-            executable='rubot_nav2_wp_yolo_exec',
+            executable='rubot_targets_yolo_exec',
             name='custom_nav2',
             output='screen',
-            parameters=[nav_yaml],
+            parameters=[
+                nav_yaml,
+                {'use_sim_time': use_sim_time.perform(context)},
+            ],
         )
 
         nav_delayed = TimerAction(

@@ -89,43 +89,68 @@ The setup process is based on a custom Ubuntu22.04 with the ROS2 Humble environm
 
 A speciffic installation is made for the UB custom rUBot model prototypes.
 
-### **2.1. Setup the rUBot mecanum**
 
-The UB custom rUBot mecanum custom made robot is based on:
+**rUBot mecanum** custom made robot is based on:
 - Raspberrypi4 computer onboard
 - Custom ROS2 configuration in Ubuntu22.04 server 64bits.
 
+When you power the rUBot mecanum robot:
+- it connects to the wifi `local network: Robotics_UB` with a specific IP address (192.168.1.x4)
+- launch the bringup and control nodes automatically
+- launch Rosbridge and web servers to properly control the robot from a mobile phone/remote computer
 
-When you power the rUBot mecanum robot, it connects to the wifi `local network: Robotics_UB`:
-
-- Each rUBot has a specific IP address assigned (192.168.1.x4).
+Students will control the robot from their **PC-computers** (Linux/ubuntu) connected to the same wifi network `Robotics_UB`. 
 - Each computer has a specific IP address assigned (192.168.1.x5).
-- From your computer, open a terminal on Desktop and clone the Director's github project:
+- Unzip the `ros2-humble-biorobub.zip` file in a `~/Desktop/rob` folder on Linux PC
+- review on:
+    - `docker-compose.yml` file: `ROS_DOMAIN_ID` variable to match your robot.
+    - `cyclonedds_pc.xml` file: IPs to match your PC and robot.
+    - `cyclonedds_robot.xml` file: IPs to match your robot and PC.
+- Open a terminal in the `~/Desktop/rob/ros2-humble-biorobub` folder and run:
+    ````bash
+    xhost +local:root            # allow X11 for graphs in container
+    cd ~/Desktop/ros2-humble-biorobub
+    docker-compose up -d
+    docker exec -it pc_humble bash
+    code .                     # open VSCode inside the container
+- From your computer, open a terminal on /home/Desktop and clone the Director's github project:
   ````shell
-  cd /home/ubuntu
+  cd /home/Desktop
   git clone https://github.com/director_github_user/ROS2_rUBot_mecanum_ws.git
+  cd ROS2_rUBot_mecanum_ws
+  colcon build
   ````
-- Open the the project in VScode and verify the .bashrc file has the following lines:
-  ````shell
-  source /opt/ros/humble/setup.bash
-  source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
-  source /home/ubuntu/ROS2_rUBot_mecanum_ws/install/setup.bash
-  cd /home/ubuntu/ROS2_rUBot_mecanum_ws
-  export GAZEBO_MODEL_PATH=/home/ubuntu/ROS2_rUBot_mecanum_ws/src/my_robot_bringup/models:$GAZEBO_MODEL_PATH
-  export QT_QPA_PLATFORM=xcb # Best for RVIZ2
-  export ROS_DOMAIN_ID=1               # group/domain ID
-  export ROS_LOCALHOST_ONLY=0          # allow communication with other machines
-  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-  export CYCLONEDDS_URI=file:///home/ubuntu/ROS2_rUBot_mecanum_ws/config/cyclonedds_pc.xml
-  #git config --global user.email "xxx@alumnes.ub.edu"
-  #git config --global user.name "your_github_username"
-  ````
-  > Modify the `ROS_DOMAIN_ID`, the `user.email` and the `user.name` accordingly.
-- Open a new terminal and verify the working nodes from your rUBot_x:
+- Open `.bashrc` file inside the container and verify it contains:
+    ````bash
+    source /opt/ros/humble/setup.bash
+    source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
+    source ~/Desktop/ROS2_rUBot_mecanum_ws/install/setup.bash
+    cd ~/Desktop/ROS2_rUBot_mecanum_ws
+    export GAZEBO_MODEL_PATH=~/Desktop/ROS2_rUBot_mecanum_ws/src/my_robot_bringup/models:$GAZEBO_MODEL_PATH
+    export QT_QPA_PLATFORM=xcb           # Best for RVIZ2
+    export ROS_DOMAIN_ID=1               # group/domain ID
+    export ROS_LOCALHOST_ONLY=0          # allow communication with other machines
+    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    export CYCLONEDDS_URI=file:///home/student/Desktop/ROS2_rUBot_mecanum_ws/network_config/cyclonedds_pc.xml
+    ````
+    > Modify the `ROS_DOMAIN_ID` correspondingly to your robot.
+- Open a new terminal and verify you see the 5 main nodes running on your robot:
   ````shell
   ros2 node list
   ````
-  If the four main nodes are running, you are ready to control the robot.
+
+  If the 5 main nodes are running, you are ready to control the robot.
+
+Before power off the computer, remember to stop the docker container:
+- To stop the container:
+    ````bash
+    docker-compose down
+    ````
+- To see the Images and Containers:
+    ````bash
+    docker ps -a               # containers
+    docker images              # images
+    ````
 
 ## **3. Update and syncronize the repository project**
 

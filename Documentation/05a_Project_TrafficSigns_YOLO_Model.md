@@ -7,10 +7,16 @@ Training models:
 - https://github.com/ultralytics/ultralytics
 - https://docs.ultralytics.com/es/usage/python/#how-do-i-train-a-custom-yolo-model-using-my-dataset
 
-For this project we have created a new package "my_robot_ai_identification" where we have used 2 strategies to perform signal identification:
-- Keras with tensorflow
-- YOLO 
+For this project we have created a new package "my_robot_ai_identification" where we have used YOLO strategy to perform signal identification:
 
+The signals that we want to identify are:
+- Stop
+- Turn Right
+- Turn Left
+- Give Way
+- No Entry 
+
+![](./Images/07_Yolo/TrafficSigns.png)
 
 ## **3. Model Training**
 
